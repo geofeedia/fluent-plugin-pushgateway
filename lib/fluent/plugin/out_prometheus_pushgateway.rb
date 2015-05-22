@@ -1,4 +1,6 @@
-require 'net/http'
+require 'prometheus/client'
+require 'prometheus/client/registry'
+require 'prometheus/client/push'
 
 module Fluent
   class PrometheusPushgatewayOutput < Output
@@ -13,16 +15,17 @@ module Fluent
 
     def configure(conf)
       super
+      @gateway = "http://#{@host}:#{@port}"
     end
 
     def emit(tag, es, chain)
-      es.each do |time, record|
-        req = Net::HTTP::Post.new(path)
-        req.body = messages.join("\n")
+      registry = Prometheus::Client::Registry.new
 
-        res = Net::HTTP.new(@host, @port.to_i).start do |http|
-          http.request(req)
-        end
+      es.each do |time, record|
+        gauge = Prometheus::Client::Gauge.new(record['name'].to_sym, "dummy")
+        registry.register(gauge)
+        gauge.set({}, record['value'])
+        Prometheus::Client::Push.new(record['job'], record['instance'], @gateway).add(registry)
       end
 
       chain.next
