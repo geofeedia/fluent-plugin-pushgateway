@@ -1,12 +1,12 @@
 Gem::Specification.new do |spec|
-  spec.name          = "fluent-plugin-prometheus-pushgateway"
-  spec.version       = "0.1.0"
-  spec.authors       = ["Mitsuhiro Tanda"]
-  spec.email         = ["mitsuhiro.tanda@gmail.com"]
+  spec.name          = "fluent-plugin-pushgateway"
+  spec.version       = "0.2.0"
+  spec.authors       = ["Mitsuhiro Tanda", "Charlie Moad"]
+  spec.email         = ["mitsuhiro.tanda@gmail.com", "charlie.moad@geofeedia.com"]
 
   spec.summary       = %q{Fluentd plugin to send metrics to Prometheus Pushgateway.}
   spec.description   = %q{Fluentd plugin to send metrics to Prometheus Pushgateway.}
-  spec.homepage      = "https://github.com/mtanda/fluent-plugin-prometheus-pushgateway"
+  spec.homepage      = "https://github.com/geofeedia/fluent-plugin-pushgateway"
   spec.licenses      = ["MIT"]
 
   spec.files         = `git ls-files -z`.split("\x0")
@@ -14,8 +14,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "fluentd"
-  spec.add_dependency "prometheus-client"
+  spec.add_runtime_dependency "fluentd"
+  spec.add_runtime_dependency "prometheus-client"
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec"
