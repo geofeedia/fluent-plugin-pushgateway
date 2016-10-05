@@ -17,17 +17,6 @@ class Fluent::PushgatewayOutput < Fluent::BufferedOutput
     super
     @gateway = "http://#{@host}:#{@port}"
 
-    # # counters
-    # @count_counter = Prometheus::Client::Counter.new(:count, 'Counters')
-    # @status_counter = Prometheus::Client::Counter.new(:status, 'Response status codes')
-    # @success_counter = Prometheus::Client::Counter.new(:success, 'Successful response counter')
-    # @error_counter = Prometheus::Client::Counter.new(:error, 'Error response counter')
-
-    # # histograms
-    # @took_histogram = Prometheus::Client::Histogram(:took, 'Response time for an API call')
-    # @duration_histogram = Prometheus::Client::Histogram(:duration, 'Response time for a call')
-    # @size_histogram = Prometheus::
-
   end
 
   def start
@@ -46,27 +35,28 @@ class Fluent::PushgatewayOutput < Fluent::BufferedOutput
     chunk.msgpack_each do |tag, time, record|
       begin
         
-        if record.has_key?('level') && record['level'].downcase.eql?('info')
-          labels = record_labels(record)
+        registry = Prometheus::Client::Registry.new
 
-          record.each do |key, value|
+        labels = record_labels(record)
 
-            # Look for specific keys that we know how to map to metrics
-            if /(count|error|success)<(int|long)>$/.match key
-              counter = Prometheus::Client::Counter.new(key)
-              Prometheus::Client.registry.register(counter)
-              counter.increment(labels, value)
-              Prometheus::Client::Push.new(@job, nil, @gateway).add(Prometheus::Client.registry)
+        record.each do |key, value|
 
-            elsif /(duration|size|took)<(int|long)>$/.match key
-              histogram = Prometheus::Client::Histogram.new(key)
-              Prometheus::Client.registry.register(histogram)
-              histogram.observe(labels, value)
-              Prometheus::Client::Push.new(@job, nil, @gateway).add(Prometheus::Client.registry)
-            end
+          # Look for specific keys that we know how to map to metrics
+          if /(count|error|success)<(int|long)>$/.match key
+            counter = Prometheus::Client::Counter.new(key)
+            registry.register(counter)
+            counter.increment(labels, value)
 
+          elsif /(duration|size|took)<(int|long)>$/.match key
+            histogram = Prometheus::Client::Histogram.new(key)
+            registry.register(histogram)
+            histogram.observe(labels, value)
+            
           end
+
         end
+
+        Prometheus::Client::Push.new(@job, nil, @gateway).add(registry)
 
       rescue => e
         $log.error("Pushgateway Error:", :error_class => e.class, :error => e.message)

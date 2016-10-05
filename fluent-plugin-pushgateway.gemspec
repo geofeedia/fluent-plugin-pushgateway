@@ -1,3 +1,6 @@
+# -*- encoding: utf-8 -*-
+$:.push File.expand_path('../lib', __FILE__)
+
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-pushgateway"
   spec.version       = "0.2.0"
