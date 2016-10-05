@@ -5,6 +5,8 @@ require 'prometheus/client/push'
 class Fluent::PushgatewayOutput < Fluent::BufferedOutput
   Fluent::Plugin.register_output('pushgateway', self)
 
+  DEFAULT_BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10].freeze
+
   config_param :host,     :string,  :default => '127.0.0.1'
   config_param :port,     :integer, :default => 9091
   config_param :job,      :string,  :default => 'pushgateway'
@@ -33,7 +35,7 @@ class Fluent::PushgatewayOutput < Fluent::BufferedOutput
   end
 
   def write(chunk)
-    registry = Prometheus::Client::Registry.new
+    registry = Prometheus::Client.registry
 
     chunk.msgpack_each do |tag, time, record|
       begin
@@ -43,13 +45,13 @@ class Fluent::PushgatewayOutput < Fluent::BufferedOutput
 
           # Look for specific keys that we know how to map to metrics
           if /(count|error|success)<(int|long)>$/.match key
-            key_sym = key_symbol(key)
-            counter = registry.exist? key_sym ? registry.get(key_sym) : registry.counter(key_sym, 'counter')
+            key_sym = key_symbol(key, record)
+            counter = registry.exist?(key_sym) ? registry.get(key_sym) : registry.counter(key_sym, 'counter')
             counter.increment(labels, value)
 
           elsif /(duration|size|took)<(int|long)>$/.match key
-            key_sym = key_symbol(key)
-            histogram = registry.exist? key_sym ? registry.get(key_sym) : registry.histogram(key_sym, 'histogram')
+            key_sym = key_symbol(key, record)
+            histogram = registry.exist?(key_sym) ? registry.get(key_sym) : registry.histogram(key_sym, 'histogram', {}, DEFAULT_BUCKETS)
             histogram.observe(labels, value)
             
           end
