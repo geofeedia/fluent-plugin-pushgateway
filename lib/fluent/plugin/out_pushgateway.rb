@@ -33,7 +33,7 @@ class Fluent::PushgatewayOutput < Fluent::BufferedOutput
   end
 
   def write(chunk)
-    registry = Prometheus::Client:Registry.new
+    registry = Prometheus::Client::Registry.new
 
     chunk.msgpack_each do |tag, time, record|
       begin
